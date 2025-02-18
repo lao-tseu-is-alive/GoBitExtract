@@ -39,36 +39,34 @@ go run gobitextract.go /path/to/your/memorydump.mem
 
 ## example output (with modified keys)
 ```bash
-2025/02/18 17:11:35 Reading memory dump from: /dev/shm/memory_dump.mem
-2025/02/18 17:11:38 Memory dump read successfully. Size: 8606650803 bytes
-2025/02/18 17:11:38 Searching for FVE metadata...
-2025/02/18 17:11:38 Found FVE metadata at offset 62083496, 	hex:3b351a8
-2025/02/18 17:11:38 Found FVE metadata at offset 80012600, 	hex:4c4e538
-2025/02/18 17:11:38 Found FVE metadata at offset 93606312, 	hex:59451a8
-2025/02/18 17:11:39 Found FVE metadata at offset 150348294, 	hex:8f62206
-2025/02/18 17:11:39 Found FVE metadata at offset 150381277, 	hex:8f6a2dd
-2025/02/18 17:11:39 Found FVE metadata at offset 150399663, 	hex:8f6eaaf
-2025/02/18 17:11:39 Found FVE metadata at offset 150484616, 	hex:8f83688
-2025/02/18 17:11:39 Found FVE metadata at offset 150484680, 	hex:8f836c8
-2025/02/18 17:11:41 Found FVE metadata at offset 2181622840, 	hex:8208ec38
-2025/02/18 17:11:41 Found FVE metadata at offset 2373472029, 	hex:8d784f1d
-2025/02/18 17:11:49 Found 10 FVE metadata structures
-2025/02/18 17:11:49 Extracting potential FVEK...
-2025/02/18 17:11:49 Extracted 2 potential FVEK
-2025/02/18 17:11:49 Potential FVEK offset: 131400, 	hex:20148
-2025/02/18 17:11:49 Potential FVEK data: 89477033c049893e4c8d5c24ccccccbbbbbbbbaaaaaaaa7330498b7b38498be3
-2025/02/18 17:11:49 Potential FVEK data length: 32
-2025/02/18 17:11:49 Potential FVEK offset: 54954568, 	hex:3468a48
-2025/02/18 17:11:49 Potential FVEK data: 672e83512c29c1cc0eaaaaaaaaaf7441eaca54a3e46cedddddddddddd930818d
-2025/02/18 17:11:49 Potential FVEK data length: 32
-2025/02/18 17:11:49 Validating and saving potential FVEK...
-2025/02/18 17:11:49 Potential FVEK saved: extracted_fvek.bin_0, containing 89477033c049893e4c8d5c24ccccccbbbbbbbbaaaaaaaa7330498b7b38498be3
-2025/02/18 17:11:49 Potential FVEK saved: extracted_fvek.bin_1, containing 672e83512c29c1cc0eaaaaaaaaaf7441eaca54a3e46cedddddddddddd930818d
-2025/02/18 17:11:49 2 valid FVEKs extracted.
-2025/02/18 17:11:49 Potential FVEK extraction completed successfully.
-2025/02/18 17:11:49 You can try to decrypt the disk using the extracted FVEK with a tool like dislocker on Linux:
-2025/02/18 17:11:49 sudo dislocker -V /dev/sdX -k extracted_fvek.bin_0 --dislocker-file your_dislocker.img
-
+2025/02/18 17:38:37 Reading memory dump from: /dev/shm/memory_dump.mem
+2025/02/18 17:38:40 Memory dump read successfully. Size: 8606650803 bytes
+2025/02/18 17:38:40 Searching for FVEK...
+2025/02/18 17:38:40 Found FVE metadata at offset 62083496 (0x3b351a8)
+2025/02/18 17:38:40 Skipping structure at 0x3b351a8: version mismatch (262148)
+2025/02/18 17:38:40 Found FVE metadata at offset 80012600 (0x4c4e538)
+2025/02/18 17:38:40 Skipping structure at 0x4c4e538: version mismatch (0)
+2025/02/18 17:38:40 Found FVE metadata at offset 93606312 (0x59451a8)
+2025/02/18 17:38:40 Skipping structure at 0x59451a8: version mismatch (262148)
+2025/02/18 17:38:40 Found FVE metadata at offset 150348294 (0x8f62206)
+2025/02/18 17:38:40 Skipping structure at 0x8f62206: version mismatch (3226897737)
+2025/02/18 17:38:40 Found FVE metadata at offset 150381277 (0x8f6a2dd)
+2025/02/18 17:38:40 Skipping structure at 0x8f6a2dd: version mismatch (944146760)
+2025/02/18 17:38:40 Found FVE metadata at offset 150399663 (0x8f6eaaf)
+2025/02/18 17:38:40 Potential FVEK found at offset 0x17032817: 89477033c049893e4c8d5c24ccccccbbbbbbbbaaaaaaaa7330498b7b38498be3
+2025/02/18 17:38:40 Found FVE metadata at offset 150484616 (0x8f83688)
+2025/02/18 17:38:40 Skipping structure at 0x8f83688: version mismatch (0)
+2025/02/18 17:38:40 Found FVE metadata at offset 150484680 (0x8f836c8)
+2025/02/18 17:38:40 Skipping structure at 0x8f836c8: version mismatch (0)
+2025/02/18 17:38:41 Found FVE metadata at offset 2181622840 (0x8208ec38)
+2025/02/18 17:38:41 Skipping structure at 0x8208ec38: version mismatch (262148)
+2025/02/18 17:38:41 Found FVE metadata at offset 2373472029 (0x8d784f1d)
+2025/02/18 17:38:41 Skipping structure at 0x8d784f1d: version mismatch (2696842572)
+2025/02/18 17:38:41 Extracted 1 valid FVEKs
+2025/02/18 17:38:41 Saved valid FVEK to: extracted_fvek.bin_0
+2025/02/18 17:38:41 Potential FVEK extraction completed successfully.
+2025/02/18 17:38:41 You can try to decrypt the disk using the extracted FVEK with a tool like dislocker on Linux:
+2025/02/18 17:38:41 sudo dislocker -V /dev/sdX -k extracted_fvek.bin_0 --dislocker-file your_dislocker.img
 ```
 
 ## 📚 References
