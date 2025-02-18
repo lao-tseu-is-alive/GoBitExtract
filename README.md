@@ -83,19 +83,19 @@ go run gobitextract.go /path/to/your/memorydump.mem
 2025/02/18 16:35:38 Potential FVEK data: 0000000000000000000000000000000000000000000000000000000000000000
 2025/02/18 16:35:38 Potential FVEK data length: 32
 2025/02/18 16:35:38 Potential FVEK offset: 54954568, hex:3468a48
-2025/02/18 16:35:38 Potential FVEK data: 672e83512c29c1cc0ea8b4b798ef7441eaca54a3e46ced722f29e50f9930818d
+2025/02/18 16:35:38 Potential FVEK data: 672e83512c29c1cc0eaaaaaaaaaf7441eaca54a3e46cedddddddddddd930818d
 2025/02/18 16:35:38 Potential FVEK data length: 32
 2025/02/18 16:35:38 Validating and saving potential FVEK...
 2025/02/18 16:35:38 Potential FVEK saved: extracted_fvek.bin_0, containing 0000000000000000000000000000000000000000000000000000000000000000
 2025/02/18 16:35:38 Potential FVEK saved: extracted_fvek.bin_1, containing a811000000000000000000000000000000000000000000000080010000000000
-2025/02/18 16:35:38 Potential FVEK saved: extracted_fvek.bin_2, containing 89477033c049893e4c8d5c2460498b5b20498b6b28498b7330498b7b38498be3
+2025/02/18 16:35:38 Potential FVEK saved: extracted_fvek.bin_2, containing 89477033c049893e4c8d5c24ccccccbbbbbbbbaaaaaaaa7330498b7b38498be3
 2025/02/18 16:35:38 Potential FVEK saved: extracted_fvek.bin_3, containing 0000000000000000000000000000000000000000000000000000000000000000
 2025/02/18 16:35:38 Potential FVEK saved: extracted_fvek.bin_4, containing 0000000000000000000000000000000000000000000000000000000000000000
 2025/02/18 16:35:38 Potential FVEK saved: extracted_fvek.bin_5, containing 0000000000000000000000000000000000000000000000000000000000000000
 2025/02/18 16:35:38 Potential FVEK saved: extracted_fvek.bin_6, containing a811000000000000000000000000000000000000000000000080010000000000
 2025/02/18 16:35:38 Potential FVEK saved: extracted_fvek.bin_7, containing a811000000000000000000000000000000000000000000000080010000000000
 2025/02/18 16:35:38 Potential FVEK saved: extracted_fvek.bin_8, containing 0000000000000000000000000000000000000000000000000000000000000000
-2025/02/18 16:35:38 Potential FVEK saved: extracted_fvek.bin_9, containing 672e83512c29c1cc0ea8b4b798ef7441eaca54a3e46ced722f29e50f9930818d
+2025/02/18 16:35:38 Potential FVEK saved: extracted_fvek.bin_9, containing 672e83512c29c1cc0eaaaaaaaaaf7441eaca54a3e46cedddddddddddd930818d
 2025/02/18 16:35:38 Potential FVEK extraction completed successfully
 2025/02/18 16:35:38 You can try to decrypt the disk using the extracted FVEK with a tool like dislocker on Linux:
 2025/02/18 16:35:38 sudo dislocker -V /dev/sdX -k extracted_fvek.bin_2 --dislocker-file your_dislocker.img
