@@ -72,4 +72,4 @@ go run gobitextract.go /path/to/your/memorydump.mem
 ```
 
 ## 📚 References
-
+[Neodyme findings of early 2025](https://neodyme.io/en/blog/bitlocker_screwed_without_a_screwdriver/#step-3b-exploiting-the-linux-kernel)

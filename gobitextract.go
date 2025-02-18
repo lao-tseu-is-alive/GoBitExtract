@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"log"
@@ -12,6 +13,17 @@ const (
 	outputPath            = "extracted_fvek.bin"
 )
 
+type FVEKeyData struct {
+	Offset uint64
+	Data   []byte
+}
+
+// FVE metadata search constants
+var (
+	fveSignature  = []byte("-FVE-FS-")             // Signature marking the start of the FVE structure
+	vmkStartBytes = []byte{0x03, 0x20, 0x01, 0x00} // Unique pattern preceding VMK
+)
+
 // readMemoryDump reads the memory dump file at the given path
 func readMemoryDump(path string) ([]byte, error) {
 	data, err := os.ReadFile(path)
@@ -21,86 +33,66 @@ func readMemoryDump(path string) ([]byte, error) {
 	return data, nil
 }
 
-type FVEMetadata struct {
-	Signature [8]byte
-	Size      uint32
-	Version   uint32
-}
-
-// searchFVEMetadata looks for BitLocker FVE structures
-func searchFVEMetadata(dump []byte) ([]FVEMetadata, error) {
-	var results []FVEMetadata
-	signature := []byte{0x2D, 0x46, 0x56, 0x45, 0x2D, 0x46, 0x53, 0x2D} // "-FVE-FS-"
-
-	for i := 0; i < len(dump)-len(signature); i++ {
-		if bytesEqual(dump[i:i+len(signature)], signature) {
-			log.Printf("Found FVE metadata at offset %d, \thex:%x", i, i)
-			metadata := FVEMetadata{}
-			copy(metadata.Signature[:], signature)
-			metadata.Size = binary.LittleEndian.Uint32(dump[i+8 : i+12])
-			metadata.Version = binary.LittleEndian.Uint32(dump[i+12 : i+16])
-			results = append(results, metadata)
-		}
-	}
-	return results, nil
-}
-
-func bytesEqual(a, b []byte) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
-type FVEKeyData struct {
-	Offset uint64
-	Data   []byte
-}
-
-// extractPotentialFVEK extracts potential FVEKs from identified structures
-func extractPotentialFVEK(dump []byte, metadata []FVEMetadata) ([]FVEKeyData, error) {
+// searchFVEK scans memory for FVE structures and extracts the FVEK
+func searchFVEK(dump []byte) []FVEKeyData {
 	var potentialKeys []FVEKeyData
 
-	for _, m := range metadata {
-		keyOffset := uint64(m.Size) + 0x100 // Example offset, adjust as needed
-		if keyOffset < uint64(len(dump)) {
-			keyData := dump[keyOffset : keyOffset+32] // Assuming 256-bit key
-			if isValidFVEK(keyData) {
-				potentialKeys = append(potentialKeys, FVEKeyData{
-					Offset: keyOffset,
-					Data:   keyData,
-				})
-			}
+	offset := 0
+	for {
+		// Look for the FVE signature
+		index := bytes.Index(dump[offset:], fveSignature)
+		if index == -1 {
+			break
 		}
-	}
-	return potentialKeys, nil
-}
+		index += offset // Adjust index relative to full dump
+		log.Printf("Found FVE metadata at offset %d (0x%x)", index, index)
 
-// validateAndSaveFVEK validates and saves extracted FVEKs
-func validateAndSaveFVEK(keys []FVEKeyData) error {
-	validKeyCount := 0
-	for _, key := range keys {
-		if isValidFVEK(key.Data) {
-			filename := fmt.Sprintf("%s_%d", outputPath, validKeyCount)
-			err := saveFVEK(key.Data, filename)
-			if err != nil {
-				return fmt.Errorf("failed to save FVEK: %v", err)
-			}
-			log.Printf("Potential FVEK saved: %s, containing %x", filename, key.Data)
-			validKeyCount++
+		// Check if version field at offset 4 is 1
+		versionOffset := index + 8 + 4
+		if versionOffset+4 > len(dump) {
+			offset = index + len(fveSignature)
+			continue
 		}
+		version := binary.LittleEndian.Uint32(dump[versionOffset : versionOffset+4])
+		if version != 1 {
+			log.Printf("Skipping structure at 0x%x: version mismatch (%d)", index, version)
+			offset = index + len(fveSignature)
+			continue
+		}
+
+		// Search for the known bytes `\x03\x20\x01\x00` within this structure
+		vfkStartIndex := bytes.Index(dump[index:], vmkStartBytes)
+		if vfkStartIndex == -1 {
+			log.Printf("Skipping structure at 0x%x: VMK pattern not found", index)
+			offset = index + len(fveSignature)
+			continue
+		}
+		vfkStartIndex += index + len(vmkStartBytes) // Adjust position
+
+		// Ensure we are within bounds before extracting the key
+		if vfkStartIndex+32 > len(dump) {
+			log.Printf("Skipping structure at 0x%x: FVEK location out of bounds", index)
+			offset = index + len(fveSignature)
+			continue
+		}
+
+		// Extract the potential FVEK
+		keyData := dump[vfkStartIndex : vfkStartIndex+32]
+		if isValidFVEK(keyData) {
+			potentialKeys = append(potentialKeys, FVEKeyData{
+				Offset: uint64(vfkStartIndex),
+				Data:   keyData,
+			})
+			log.Printf("Potential FVEK found at offset 0x%x: %x", vfkStartIndex, keyData)
+		} else {
+			log.Printf("Discarding invalid FVEK at offset 0x%x", vfkStartIndex)
+		}
+
+		// Move to the next occurrence
+		offset = index + len(fveSignature)
 	}
-	if validKeyCount == 0 {
-		log.Printf("No valid FVEK found.")
-	} else {
-		log.Printf("%d valid FVEKs extracted.", validKeyCount)
-	}
-	return nil
+
+	return potentialKeys
 }
 
 // isValidFVEK checks if the extracted key is likely a valid FVEK
@@ -108,25 +100,19 @@ func isValidFVEK(data []byte) bool {
 	if len(data) != 32 {
 		return false
 	}
-
 	zeroCount := 0
 	for _, b := range data {
 		if b == 0x00 {
 			zeroCount++
 		}
 	}
-
 	// Reject keys with more than 80% zeroes
-	if zeroCount > 25 {
-		return false
-	}
-
-	return true
+	return zeroCount <= 25
 }
 
 // saveFVEK writes a valid FVEK to a file
-func saveFVEK(data []byte, path string) error {
-	return os.WriteFile(path, data, 0600)
+func saveFVEK(data []byte, filename string) error {
+	return os.WriteFile(filename, data, 0600)
 }
 
 func main() {
@@ -140,33 +126,23 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to read memory dump: %v", err)
 	}
-	sizeOfDump := len(dump)
-	log.Printf("Memory dump read successfully. Size: %d bytes", sizeOfDump)
+	log.Printf("Memory dump read successfully. Size: %d bytes", len(dump))
 
-	log.Printf("Searching for FVE metadata...")
-	metadata, err := searchFVEMetadata(dump)
-	if err != nil {
-		log.Fatalf("Failed to search for FVE metadata: %v", err)
-	}
-	log.Printf("Found %d FVE metadata structures", len(metadata))
-
-	log.Printf("Extracting potential FVEK...")
-	keys, err := extractPotentialFVEK(dump, metadata)
-	if err != nil {
-		log.Fatalf("Failed to extract potential FVEK: %v", err)
-	}
-	log.Printf("Extracted %d potential FVEK", len(keys))
-
-	for _, key := range keys {
-		log.Printf("Potential FVEK offset: %d, \thex:%x", key.Offset, key.Offset)
-		log.Printf("Potential FVEK data: %x", key.Data)
-		log.Printf("Potential FVEK data length: %d", len(key.Data))
+	log.Printf("Searching for FVEK...")
+	keys := searchFVEK(dump)
+	if len(keys) == 0 {
+		log.Printf("No valid FVEK found.")
+		return
 	}
 
-	log.Printf("Validating and saving potential FVEK...")
-	err = validateAndSaveFVEK(keys)
-	if err != nil {
-		log.Fatalf("Failed to validate and save FVEK: %v", err)
+	log.Printf("Extracted %d valid FVEKs", len(keys))
+	for i, key := range keys {
+		filename := fmt.Sprintf("%s_%d", outputPath, i)
+		err := saveFVEK(key.Data, filename)
+		if err != nil {
+			log.Fatalf("Failed to save FVEK: %v", err)
+		}
+		log.Printf("Saved valid FVEK to: %s", filename)
 	}
 
 	log.Printf("Potential FVEK extraction completed successfully.")
