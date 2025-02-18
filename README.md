@@ -1,10 +1,7 @@
 # GoBitExtract 🔐  
-GoBitExtract is a simple program written in Go that allows you to search a memory dump file  for a  BitLocker FVEK (Full Volume Encryption Key)
-
-# GoBitExtract 🔐  
 **BitLocker FVEK Extractor from Memory Dumps**  
 
-GoBitExtract is a simple program written in Go that allows you to search a memory dump file for a BitLocker FVEK (Full Volume Encryption Key). It is designed for **legitimate recovery purposes**, such as forensic investigations or system administration.
+GoBitExtract is a simple program written in Go that allows you to search a memory dump file for a BitLocker FVEK (Full Volume Encryption Key). It is designed for **legitimate recovery purposes**, such as forensic investigations or system administration or try recovering your own data when you have lost the original key...
 
 ## ⚠️ Disclaimer  
 🚨 **Legal Use Only!** 🚨  
