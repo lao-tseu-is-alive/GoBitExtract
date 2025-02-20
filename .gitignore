@@ -33,3 +33,10 @@ go.work.sum
 /extracted_fvek.bin_7
 /extracted_fvek.bin_8
 /extracted_fvek.bin_9
+
+
+.idea/
+/extracted_fvek_plusalgCrypt.bin_0
+/extracted_fvek_plusalgCrypt.bin_1
+/extracted_fvek_plusalgCrypt.bin_2
+/output.fvek

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 	"log"
 	"os"
@@ -11,6 +10,7 @@ import (
 const (
 	defaultMemoryDumpPath = "memory_dump.mem"
 	outputPath            = "extracted_fvek.bin"
+	maxBytesOffset        = 4096 // 4GB
 )
 
 type FVEKeyData struct {
@@ -20,8 +20,14 @@ type FVEKeyData struct {
 
 // FVE metadata search constants
 var (
-	fveSignature  = []byte("-FVE-FS-")             // Signature marking the start of the FVE structure
-	vmkStartBytes = []byte{0x03, 0x20, 0x01, 0x00} // Unique pattern preceding VMK
+	fveSignature = []byte("-FVE-FS-") // Signature marking the start of the FVE structure
+	//Unique pattern preceding VMK from https://neodyme.io/en/blog/bitlocker_screwed_without_a_screwdriver/#some-notes-on-debugging-with-qemu
+	//vmkStartBytes = []byte{0x03, 0x20, 0x01, 0x00}
+	// https://noinitrd.github.io/Memory-Dump-UEFI/
+	//  key is prefaced by 0x0480 which indicates the type of encryption being used, which in this case is XTS-AES-128.
+	vmkStartBytes = []byte{0x04, 0x80, 0x00, 0x00}
+	// Unique pattern with type of encryption being used, here is XTS-AES-256 but oupps  in this case he key is 64 bytes long must be changed above
+	//vmkStartBytes = []byte{0x04, 0x80, 0x00, 0x01}
 )
 
 // readMemoryDump reads the memory dump file at the given path
@@ -45,23 +51,26 @@ func searchFVEK(dump []byte) []FVEKeyData {
 			break
 		}
 		index += offset // Adjust index relative to full dump
-		log.Printf("Found FVE metadata at offset %d (0x%x)", index, index)
+		log.Printf("Found FVE metadata  at%12d(0x%10x): \t%v", index, index, dump[index:index+len(fveSignature)])
 
 		// Check if version field at offset 4 is 1
-		versionOffset := index + 8 + 4
-		if versionOffset+4 > len(dump) {
-			offset = index + len(fveSignature)
-			continue
-		}
-		version := binary.LittleEndian.Uint32(dump[versionOffset : versionOffset+4])
-		if version != 1 {
-			log.Printf("Skipping structure at 0x%x: version mismatch (%d)", index, version)
-			offset = index + len(fveSignature)
-			continue
-		}
+		/*
+			versionOffset := index + 8 + 4
+			if versionOffset+4 > len(dump) {
+				offset = index + len(fveSignature)
+				continue
+			}
+			version := binary.LittleEndian.Uint32(dump[versionOffset : versionOffset+4])
+			if version != 1 {
+				log.Printf("Skipping structure at 0x%x: version mismatch (%d)", index, version)
+				offset = index + len(fveSignature)
+				continue
+			}
 
-		// Search for the known bytes `\x03\x20\x01\x00` within this structure
-		vfkStartIndex := bytes.Index(dump[index:], vmkStartBytes)
+		*/
+
+		// Search for the known bytes  within this structure
+		vfkStartIndex := bytes.Index(dump[index:index+maxBytesOffset], vmkStartBytes)
 		if vfkStartIndex == -1 {
 			log.Printf("Skipping structure at 0x%x: VMK pattern not found", index)
 			offset = index + len(fveSignature)
@@ -83,7 +92,8 @@ func searchFVEK(dump []byte) []FVEKeyData {
 				Offset: uint64(vfkStartIndex),
 				Data:   keyData,
 			})
-			log.Printf("Potential FVEK found at offset 0x%x: %x", vfkStartIndex, keyData)
+			log.Printf("Potential key found at%12d(0x%10x): \tprefix: %x, \tdata: %x", vfkStartIndex, vfkStartIndex, dump[vfkStartIndex-4:vfkStartIndex], keyData)
+
 		} else {
 			log.Printf("Discarding invalid FVEK at offset 0x%x", vfkStartIndex)
 		}
